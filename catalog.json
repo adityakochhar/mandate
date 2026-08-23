@@ -11,6 +11,7 @@
     {"sku": "SKU007", "name": "Espresso machine", "price_paise": 140000, "category": "appliances", "in_stock": 3},
     {"sku": "SKU008", "name": "Electric kettle 1.7L", "price_paise": 189000, "category": "appliances", "in_stock": 5},
     {"sku": "SKU009", "name": "Coffee grinder burr type", "price_paise": 320000, "category": "groceries", "in_stock": 2},
-    {"sku": "SKU010", "name": "Stainless steel cookware set", "price_paise": 450000, "category": "groceries", "in_stock": 4}
+    {"sku": "SKU010", "name": "Stainless steel cookware set", "price_paise": 450000, "category": "groceries", "in_stock": 4},
+    {"sku": "SKU011", "name": "AA batteries 4-pack", "price_paise": 18000, "category": "groceries", "in_stock": 20}
   ]
 }
