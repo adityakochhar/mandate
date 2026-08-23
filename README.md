@@ -84,10 +84,12 @@ Then:
 
 ```bash
 python demo.py                    # end-to-end, four scenarios
+python batch.py                   # 30-attempt batch run
 python test_gate.py               # 12 gate checks
 python test_mandate.py            # signature tamper tests
 python test_vulnerability.py      # the fixed vulnerability
 python evaluate_classifier.py     # held-out ML metrics
+python compare_providers.py       # hosted vs local model (needs `ollama serve`)
 ```
 
 ---
@@ -117,10 +119,33 @@ Mandate: 100000 paise, `["groceries"]`, `["merch_kofi"]`
 
 | Scenario | Result | Detail |
 |---|---|---|
-| Arabica coffee beans | ALLOW | category groceries verified at 0.82 |
+| Arabica coffee beans | ALLOW | category groceries verified at 0.84 |
 | Electric kettle | DENY | 189000 > 100000 |
-| AA batteries (mislabelled) | DENY | classified electronics at 0.79; merchant claimed groceries |
-| Ceramic serving bowl set | ESCALATE | leaning electronics at 0.36, below threshold 0.50 |
+| AA batteries (mislabelled) | DENY | classified electronics at 0.75; merchant claimed groceries |
+| Ceramic serving bowl set | ESCALATE | leaning appliances at 0.30, below threshold 0.60 |
+
+### Batch run — 30 attempts
+
+`python batch.py` runs 30 scenarios across four mandate configurations:
+in-scope purchases, over-limit attempts, category violations, ambiguous
+products, and requests for items not in the catalog.
+
+| Outcome | Count |
+|---|---|
+| ALLOW | 10 |
+| DENY — category not allowed | 10 |
+| DENY — amount exceeded | 5 |
+| ESCALATE — category uncertain | 3 |
+| NO_PROPOSAL — no matching item | 2 |
+
+**Unauthorised purchases: 0 / 30.** No money moved outside a mandate's scope.
+**Legitimate purchases wrongly blocked: 0 / 30.**
+
+Total runtime 21s, including 10 live Razorpay test-mode order creations.
+
+*Caveat:* these scenarios were written by the author with knowledge of the
+classifier's behaviour. They exercise every decision path, but they are not an
+adversarial or independently sampled test set.
 
 ### Classifier — honest metrics
 
@@ -147,7 +172,10 @@ model's default.**
 **0.60 is the lowest threshold with zero wrong approvals**, up from 0.50 before
 the data change. Improving the model invalidated the previously safe threshold —
 the threshold is re-derived from held-out data after every change to the model.
----
+
+`C=5.0` was likewise selected by held-out accuracy across
+`C ∈ {1, 5, 10, 50, 200}`, not by inspection.
+
 ### Provider independence
 
 The same five instructions, run through a hosted model and a local one:
@@ -164,6 +192,8 @@ because the model holds no authority in the design. Local inference costs ~14×
 latency and sends no data off the machine.
 
 Reproduce with `python compare_providers.py`.
+
+---
 
 ## Not implemented, and why
 
@@ -184,12 +214,14 @@ Reproduce with `python compare_providers.py`.
 - **Check ordering.** Amount is checked before category (cheapest check first).
   An item that is both over-limit and miscategorised reports only
   `AMOUNT_EXCEEDED`. Fast-fail was chosen over exhaustive reporting.
-- **Training data is synthetic and small.** 145 examples written by hand,
+- **Training data is synthetic and small.** 195 examples written by hand,
   skewed toward Indian retail vocabulary.
+- **Confidence threshold is coupled to the model.** Any change to training data
+  or hyperparameters requires re-deriving it from held-out data.
 
 ## Stack
 
-Python 3.12 · FastAPI · PyNaCl (Ed25519) · scikit-learn · Groq (`openai/gpt-oss-20b`) · Razorpay test mode · SQLite
+Python 3.12 · FastAPI · PyNaCl (Ed25519) · scikit-learn · Groq (`openai/gpt-oss-20b`) · Ollama · Razorpay test mode · SQLite
 
 Model access is behind an `LLMProvider` interface — swapping providers is a
-one-line change, because the model holds no authority in the design.
+nine-line subclass, because the model holds no authority in the design.
