@@ -5,7 +5,7 @@ from sklearn.pipeline import make_pipeline
 from training_data import TRAINING_DATA, CATEGORIES
 
 UNCERTAIN = "UNCERTAIN"
-DEFAULT_THRESHOLD = 0.50
+DEFAULT_THRESHOLD = 0.60
 
 
 class CategoryClassifier:

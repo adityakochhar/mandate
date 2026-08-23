@@ -124,28 +124,29 @@ Mandate: 100000 paise, `["groceries"]`, `["merch_kofi"]`
 
 ### Classifier — honest metrics
 
-145 hand-built training examples, 4 categories, 25% held out.
+195 hand-built training examples, 4 categories, 25% held out.
 
-- **Accuracy on unseen names: 65%**
-- Per-class recall: groceries 0.92, household 0.60, appliances 0.50, electronics 0.38
-- Electronics precision is 1.00 — when it says electronics, it's right; it's just rarely confident enough to say so.
+- **Accuracy on unseen names: 73%**
+- Per-class recall: electronics 1.00, groceries 0.69, appliances 0.64, household 0.50
+- Groceries precision is 1.00; electronics precision is 0.60.
 
-The model is weak. That is the point of the threshold:
+An earlier version had 145 examples skewed toward groceries, and everything
+unrecognised was guessed as groceries (electronics recall: 0.38). Adding 50
+targeted electronics and appliances examples raised accuracy to 73% — and
+moved the bias rather than removing it. Electronics is now the majority class
+and has become the new fallback guess. **The largest class is always the
+model's default.**
 
 | Threshold | Auto-decided | Escalated | **Wrong approvals** |
 |---|---|---|---|
-| 0.40 | 20 | 17 | **1** |
-| 0.50 | 16 | 21 | **0** |
-| 0.60 | 8 | 29 | **0** |
-| 0.80 | 3 | 34 | **0** |
+| 0.40 | 29 | 20 | **2** |
+| 0.50 | 25 | 24 | **1** |
+| 0.60 | 14 | 35 | **0** |
+| 0.70 | 7 | 42 | **0** |
 
-**0.50 was chosen as the lowest threshold with zero wrong approvals.** The cost
-is that 57% of purchases require human confirmation. A better model reduces
-that friction; it does not change the safety property.
-
-`C=5.0` was likewise selected by held-out accuracy across `C ∈ {1, 5, 10, 50, 200}`,
-not by inspection.
-
+**0.60 is the lowest threshold with zero wrong approvals**, up from 0.50 before
+the data change. Improving the model invalidated the previously safe threshold —
+the threshold is re-derived from held-out data after every change to the model.
 ---
 
 ## Not implemented, and why
