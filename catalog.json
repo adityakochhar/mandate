@@ -1,0 +1,16 @@
+{
+  "merchant_id": "merch_kofi",
+  "merchant_name": "Kofi General Store",
+  "items": [
+    {"sku": "SKU001", "name": "Arabica coffee beans 1kg", "price_paise": 85000, "category": "groceries", "in_stock": 12},
+    {"sku": "SKU002", "name": "Robusta coffee beans 1kg", "price_paise": 62000, "category": "groceries", "in_stock": 8},
+    {"sku": "SKU003", "name": "Bananas 1 dozen", "price_paise": 6000, "category": "groceries", "in_stock": 40},
+    {"sku": "SKU004", "name": "Basmati rice 5kg", "price_paise": 54000, "category": "groceries", "in_stock": 25},
+    {"sku": "SKU005", "name": "Dish soap 500ml", "price_paise": 12000, "category": "household", "in_stock": 30},
+    {"sku": "SKU006", "name": "Paper towels 6 rolls", "price_paise": 21000, "category": "household", "in_stock": 15},
+    {"sku": "SKU007", "name": "Espresso machine", "price_paise": 140000, "category": "appliances", "in_stock": 3},
+    {"sku": "SKU008", "name": "Electric kettle 1.7L", "price_paise": 189000, "category": "appliances", "in_stock": 5},
+    {"sku": "SKU009", "name": "Coffee grinder burr type", "price_paise": 320000, "category": "groceries", "in_stock": 2},
+    {"sku": "SKU010", "name": "Stainless steel cookware set", "price_paise": 450000, "category": "groceries", "in_stock": 4}
+  ]
+}
