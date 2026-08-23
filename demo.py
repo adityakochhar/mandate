@@ -16,7 +16,7 @@ scenarios = [
     ("1. In-scope purchase", "I want arabica coffee beans"),
     ("2. Over the limit", "buy the electric kettle"),
     ("3. Merchant lies about category", "buy AA batteries"),
-    ("4. Model not confident", "buy the stainless steel cookware set"),
+        ("4. Model not confident", "buy the ceramic serving bowl set"),
 ]
 
 for title, instruction in scenarios:
