@@ -148,6 +148,22 @@ model's default.**
 the data change. Improving the model invalidated the previously safe threshold —
 the threshold is re-derived from held-out data after every change to the model.
 ---
+### Provider independence
+
+The same five instructions, run through a hosted model and a local one:
+
+| | Groq (`openai/gpt-oss-20b`) | Ollama (`qwen2.5-coder:14b`, local) |
+|---|---|---|
+| Identical item chosen | 5 / 5 | 5 / 5 |
+| Correctly declined absent item | yes | yes |
+| Total time | 2.8s | 39.8s |
+
+Swapping providers is a nine-line subclass — same prompt, same parsing, different
+endpoint. Nothing in the gate, the payment path, or the audit log changes,
+because the model holds no authority in the design. Local inference costs ~14×
+latency and sends no data off the machine.
+
+Reproduce with `python compare_providers.py`.
 
 ## Not implemented, and why
 
