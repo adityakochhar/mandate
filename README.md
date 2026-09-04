@@ -28,7 +28,7 @@ Buyer agent                   (LLM picks an item, requests checkout)
         ↓
 Merchant returns HTTP 402     (payment challenge)
         ↓
-Mandate gate                  (7 checks — fails closed)
+Mandate gate                  (fails closed)
         ↓
     ALLOW → Razorpay test-mode order
     DENY  → logged, no money moves
@@ -85,7 +85,7 @@ Then:
 ```bash
 python demo.py                    # end-to-end, four scenarios
 python batch.py                   # 30-attempt batch run
-python test_gate.py               # 12 gate checks
+python test_gate.py               # gate checks
 python test_mandate.py            # signature tamper tests
 python test_vulnerability.py      # the fixed vulnerability
 python evaluate_classifier.py     # held-out ML metrics
@@ -97,6 +97,8 @@ python compare_providers.py       # hosted vs local model (needs `ollama serve`)
 ## Results
 
 ### Gate behaviour — `test_gate.py`
+
+Twelve checks: one valid purchase allowed, ten refused, one escalated.
 
 ```
 valid purchase           ALLOW     OK
@@ -113,6 +115,10 @@ raised own limit         DENY      SIGNATURE_INVALID
 replay attempt           DENY      TRANSACTION_LIMIT
 ```
 
+`no classifier → DENY` is the fail-closed rule made explicit: if the
+verification machinery is unavailable, the answer is refusal, never
+"allow because we couldn't check."
+
 ### End-to-end — `demo.py`
 
 Mandate: 100000 paise, `["groceries"]`, `["merch_kofi"]`
@@ -123,6 +129,23 @@ Mandate: 100000 paise, `["groceries"]`, `["merch_kofi"]`
 | Electric kettle | DENY | 189000 > 100000 |
 | AA batteries (mislabelled) | DENY | classified electronics at 0.75; merchant claimed groceries |
 | Ceramic serving bowl set | ESCALATE | leaning appliances at 0.30, below threshold 0.60 |
+
+Four requests, one Razorpay order. The three refusals never reached the
+payment API — the gate stops them before any payment code runs.
+
+The audit trail records both the merchant's claim and the derived category:
+
+```
+decision   reason                 claimed      derived      conf
+ALLOW      OK                     groceries    groceries    0.844
+DENY       AMOUNT_EXCEEDED        appliances   appliances   0.811
+DENY       CATEGORY_NOT_ALLOWED   groceries    electronics  0.751
+ESCALATE   CATEGORY_UNCERTAIN     groceries    UNCERTAIN    0.299
+```
+
+Row 3 is a merchant caught misrepresenting a product. Row 2 shows the checks
+are independent — the merchant was honest about the kettle, and it was still
+denied on amount.
 
 ### Batch run — 30 attempts
 
@@ -141,7 +164,7 @@ products, and requests for items not in the catalog.
 **Unauthorised purchases: 0 / 30.** No money moved outside a mandate's scope.
 **Legitimate purchases wrongly blocked: 0 / 30.**
 
-Total runtime 21s, including 10 live Razorpay test-mode order creations.
+Ten approved requests reached the payment API. Twenty did not.
 
 *Caveat:* these scenarios were written by the author with knowledge of the
 classifier's behaviour. They exercise every decision path, but they are not an
@@ -170,11 +193,16 @@ model's default.**
 | 0.70 | 7 | 42 | **0** |
 
 **0.60 is the lowest threshold with zero wrong approvals**, up from 0.50 before
-the data change. Improving the model invalidated the previously safe threshold —
-the threshold is re-derived from held-out data after every change to the model.
+the data change. Improving the model invalidated the previously safe threshold.
+That was only caught by re-measuring — the threshold is re-derived from
+held-out data after every change to the model.
 
 `C=5.0` was likewise selected by held-out accuracy across
 `C ∈ {1, 5, 10, 50, 200}`, not by inspection.
+
+The classifier is weak, and the architecture assumes it. A wrong classification
+can change whether something is escalated; it cannot bypass the mandate,
+because the authorization decision itself is deterministic.
 
 ### Provider independence
 
@@ -184,11 +212,11 @@ The same five instructions, run through a hosted model and a local one:
 |---|---|---|
 | Identical item chosen | 5 / 5 | 5 / 5 |
 | Correctly declined absent item | yes | yes |
-| Total time | 2.8s | 39.8s |
+| Relative latency | baseline | ~14× slower |
 
 Swapping providers is a nine-line subclass — same prompt, same parsing, different
 endpoint. Nothing in the gate, the payment path, or the audit log changes,
-because the model holds no authority in the design. Local inference costs ~14×
+because the model holds no authority in the design. Local inference costs
 latency and sends no data off the machine.
 
 Reproduce with `python compare_providers.py`.
@@ -208,6 +236,9 @@ Reproduce with `python compare_providers.py`.
 - **Merchant-side category integrity.** The classifier defends against a
   merchant misdeclaring a category. It cannot defend against a merchant
   misdescribing the product itself.
+- **Adversarial testing.** The test scenarios are author-written. A genuine
+  adversarial suite — misleading product names, unicode tricks, prompt
+  injection in descriptions — is the most valuable next addition.
 
 ## Known trade-offs
 
